@@ -48,32 +48,27 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 /**
  * Reproducer:
- *
+ * <p>
  * Use linux.
  * Install https://github.com/apple/foundationdb/releases/download/7.3.27/foundationdb-clients-7.3.27-1.el7.x86_64.rpm
  * Install https://github.com/apple/foundationdb/releases/download/7.3.27/foundationdb-server-7.3.27-1.el7.x86_64.rpm
  * Build native executable
  * Run native executable in an infinite loop
  * observe error stack trace after minutes
- *
- *
  */
 public class Fortune {
-
 
     private static final ThreadLocal<Object> THREAD_LOCAL = new ThreadLocal<>();
 
     public static void main(String[] args) throws Exception {
 
         var factory = Thread.ofVirtual()
-                .inheritInheritableThreadLocals(false)
                 .factory();
 
         var executor = Executors.newThreadPerTaskExecutor(factory);
@@ -125,25 +120,13 @@ public class Fortune {
     }
 
     private static int doWork(Transaction tr, int j) {
-        if (j % 3 == 0) {
-            // Create different stack length to trigger bug??
-            return CompletableFuture.supplyAsync(() -> {
-                        THREAD_LOCAL.get();
-                        THREAD_LOCAL.set(new Object());
 
-                        tr.get(("foo"+j).getBytes())
-                                .join();
-                        return 1;
-                    }, Runnable::run)
-                    .join();
-        } else {
-            THREAD_LOCAL.get();
-            THREAD_LOCAL.set(new Object());
+        THREAD_LOCAL.get();
+        THREAD_LOCAL.set(new Object());
 
-            tr.get(("foo"+j).getBytes())
-                    .join();
-            return 1;
-        }
+        tr.get(("foo" + j).getBytes())
+                .join();
+        return 1;
     }
 
 
